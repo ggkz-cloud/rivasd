@@ -1,0 +1,145 @@
+-- LocalScript placed inside StarterPlayerScripts
+local player = game.Players.LocalPlayer
+local camera = game.Workspace.CurrentCamera
+local maxDistance = 300
+local espEnabled = true
+local aimbotEnabled = false
+local aimingPart = "Head"  -- Default body part to aim at
+local smoothness = 10  -- Smoothness for the aimbot (lower is faster)
+
+-- Keybinds
+local toggleESPKey = Enum.KeyCode.F -- Change key for ESP toggle
+local toggleAimbotKey = Enum.KeyCode.G -- Change key for Aimbot toggle
+local toggleGUIKey = Enum.KeyCode.H -- Change key for GUI toggle
+
+-- GUI Setup
+local screenGui = Instance.new("ScreenGui", player.PlayerGui)
+screenGui.Name = "SettingsGUI"
+screenGui.ResetOnSpawn = false
+
+local espButton = Instance.new("TextButton")
+espButton.Text = "Toggle ESP"
+espButton.Size = UDim2.new(0, 200, 0, 50)
+espButton.Position = UDim2.new(0, 10, 0, 10)
+espButton.Parent = screenGui
+
+local aimbotButton = Instance.new("TextButton")
+aimbotButton.Text = "Toggle Aimbot"
+aimbotButton.Size = UDim2.new(0, 200, 0, 50)
+aimbotButton.Position = UDim2.new(0, 10, 0, 70)
+aimbotButton.Parent = screenGui
+
+local keybindButton = Instance.new("TextButton")
+keybindButton.Text = "Change Keybinds"
+keybindButton.Size = UDim2.new(0, 200, 0, 50)
+keybindButton.Position = UDim2.new(0, 10, 0, 130)
+keybindButton.Parent = screenGui
+
+local keybindFrame = Instance.new("Frame")
+keybindFrame.Size = UDim2.new(0, 250, 0, 200)
+keybindFrame.Position = UDim2.new(0, 250, 0, 50)
+keybindFrame.Parent = screenGui
+keybindFrame.Visible = false
+
+local espKeybindLabel = Instance.new("TextLabel")
+espKeybindLabel.Text = "ESP Toggle: " .. tostring(toggleESPKey)
+espKeybindLabel.Size = UDim2.new(0, 250, 0, 30)
+espKeybindLabel.Position = UDim2.new(0, 0, 0, 10)
+espKeybindLabel.Parent = keybindFrame
+
+local aimbotKeybindLabel = Instance.new("TextLabel")
+aimbotKeybindLabel.Text = "Aimbot Toggle: " .. tostring(toggleAimbotKey)
+aimbotKeybindLabel.Size = UDim2.new(0, 250, 0, 30)
+aimbotKeybindLabel.Position = UDim2.new(0, 0, 0, 50)
+aimbotKeybindLabel.Parent = keybindFrame
+
+-- Functions
+
+-- ESP Function to display names over players
+local function addESP(target)
+    if target:IsA("Player") and target.Character and target.Character:FindFirstChild("Head") then
+        local distance = (camera.CFrame.Position - target.Character.HumanoidRootPart.Position).magnitude
+        if distance <= maxDistance then
+            local espFrame = Instance.new("BillboardGui")
+            espFrame.Parent = target.Character.Head
+            espFrame.Adornee = target.Character.Head
+            espFrame.Size = UDim2.new(0, 100, 0, 50)
+            espFrame.StudsOffset = Vector3.new(0, 2, 0)
+            espFrame.AlwaysOnTop = true
+
+            local textLabel = Instance.new("TextLabel")
+            textLabel.Parent = espFrame
+            textLabel.Text = target.Name
+            textLabel.Size = UDim2.new(1, 0, 1, 0)
+            textLabel.BackgroundTransparency = 1
+            textLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+        end
+    end
+end
+
+-- Aimbot Function
+local function aimbot()
+    if aimbotEnabled then
+        local closestPlayer = nil
+        local closestDistance = math.huge
+
+        -- Find the closest enemy player
+        for _, target in pairs(game.Players:GetPlayers()) do
+            if target ~= player and target.Team ~= player.Team and target.Character and target.Character:FindFirstChild(aimingPart) then
+                local distance = (camera.CFrame.Position - target.Character.HumanoidRootPart.Position).magnitude
+                if distance <= maxDistance and distance < closestDistance then
+                    closestDistance = distance
+                    closestPlayer = target
+                end
+            end
+        end
+
+        if closestPlayer then
+            -- Aim at the closest player's body part
+            local targetPart = closestPlayer.Character:FindFirstChild(aimingPart)
+            if targetPart then
+                local targetPosition = targetPart.Position
+                local direction = (targetPosition - camera.CFrame.Position).unit
+                local smoothDirection = direction * (1 / smoothness)
+                camera.CFrame = CFrame.new(camera.CFrame.Position, camera.CFrame.Position + smoothDirection)
+            end
+        end
+    end
+end
+
+-- Keybind Toggling Functions
+game:GetService("UserInputService").InputBegan:Connect(function(input)
+    if input.KeyCode == toggleESPKey then
+        espEnabled = not espEnabled
+    elseif input.KeyCode == toggleAimbotKey then
+        aimbotEnabled = not aimbotEnabled
+    elseif input.KeyCode == toggleGUIKey then
+        keybindFrame.Visible = not keybindFrame.Visible
+    end
+end)
+
+-- ESP Display Loop
+game:GetService("RunService").RenderStepped:Connect(function()
+    if espEnabled then
+        for _, target in pairs(game.Players:GetPlayers()) do
+            addESP(target)
+        end
+    end
+
+    -- Run aimbot loop
+    aimbot()
+end)
+
+-- GUI Button Actions
+espButton.MouseButton1Click:Connect(function()
+    espEnabled = not espEnabled
+end)
+
+aimbotButton.MouseButton1Click:Connect(function()
+    aimbotEnabled = not aimbotEnabled
+end)
+
+keybindButton.MouseButton1Click:Connect(function()
+    keybindFrame.Visible = not keybindFrame.Visible
+end)
+
