@@ -48,7 +48,11 @@ local function loadWithTimeout(url: string, timeout: number?): ...any
 	local timeoutThread = task.delay(timeout, function()
 		if not requestCompleted then
 			warn(`Request for {url} timed out after {timeout} seconds`)
-			task.cancel(requestThread)
+			if requestThread then
+    task.cancel(requestThread)
+else
+    warn("Request thread is nil and cannot be canceled.")
+end
 			result = "Request timed out"
 			requestCompleted = true
 		end
