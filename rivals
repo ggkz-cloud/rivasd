@@ -39,6 +39,17 @@ local function loadWithTimeout(url: string, timeout: number?): ...any
 		end
 		local content = fetchResult -- Fetched content
 		local execSuccess, execResult = pcall(function()
+    if content and #content > 0 then
+        return loadstring(content)()
+    else
+        error("Content is empty or invalid")
+    end
+end)
+
+if not execSuccess then
+    warn("Error executing loadstring: " .. tostring(execResult))
+    execResult = nil -- Ensure it is explicitly set to nil
+end
 			return loadstring(content)()
 		end)
 		success, result = execSuccess, execResult
